@@ -165,6 +165,8 @@ int32_t ff_scalarproduct_and_madd_int16_neon(int16_t *v1, const int16_t *v2,
 void ff_apply_window_int16_neon(int16_t *dst, const int16_t *src,
                                 const int16_t *window, unsigned n);
 
+void diff_bytes_neon(uint8_t *dst, uint8_t *src1, uint8_t *src2, int w);
+
 void ff_dsputil_init_neon(DSPContext *c, AVCodecContext *avctx)
 {
     const int high_bit_depth = avctx->bits_per_raw_sample > 8;
@@ -317,4 +319,5 @@ void ff_dsputil_init_neon(DSPContext *c, AVCodecContext *avctx)
     c->scalarproduct_and_madd_int16 = ff_scalarproduct_and_madd_int16_neon;
 
     c->apply_window_int16 = ff_apply_window_int16_neon;
+    c->diff_bytes = diff_bytes_neon;
 }
