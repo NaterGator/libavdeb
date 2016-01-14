@@ -1,0 +1,3 @@
+version=3
+opts="uversionmangle=s/_/~/i,pgpsigurlmangle=s/$/.asc/" \
+http://libav.org/releases/libav-([\d\.]+)\.tar\.xz

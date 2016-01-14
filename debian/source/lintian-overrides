@@ -1,0 +1,2 @@
+# ffmpeg-dbg is an empty, transitional package
+libav source: dbg-package-missing-depends ffmpeg-dbg

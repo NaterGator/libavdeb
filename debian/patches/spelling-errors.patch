@@ -1,0 +1,45 @@
+Author: Fabian Greffrath <fabian+debian@greffrath.com>
+Description: Fix some spelling errors detected by lintian.
+
+--- a/doc/filters.texi
++++ b/doc/filters.texi
+@@ -52,7 +52,7 @@ terminated when the next special charact
+ 
+ The name and arguments of the filter are optionally preceded and
+ followed by a list of link labels.
+-A link label allows to name a link and associate it to a filter output
++A link label allows one to name a link and associate it to a filter output
+ or input pad. The preceding labels @var{in_link_1}
+ ... @var{in_link_N}, are associated to the filter input pads,
+ the following labels @var{out_link_1} ... @var{out_link_M}, are
+@@ -2294,7 +2294,7 @@ value is "-1".
+ 
+ @end table
+ 
+-This filter allows to overlay a second video on top of main input of
++This filter allows one to overlay a second video on top of main input of
+ a filtergraph as shown in this graph:
+ @example
+ input -----------> deltapts0 --> overlay --> output
+--- a/doc/indevs.texi
++++ b/doc/indevs.texi
+@@ -291,7 +291,7 @@ other filename will be interpreted as de
+ 
+ X11 video input device.
+ 
+-This device allows to capture a region of an X11 display.
++This device allows one to capture a region of an X11 display.
+ 
+ The filename passed as input has the syntax:
+ @example
+--- a/doc/protocols.texi
++++ b/doc/protocols.texi
+@@ -536,7 +536,7 @@ avplay sap://[ff0e::2:7ffe]
+ 
+ @section tcp
+ 
+-Trasmission Control Protocol.
++Transmission Control Protocol.
+ 
+ The required syntax for a TCP url is:
+ @example
