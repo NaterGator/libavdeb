@@ -171,7 +171,7 @@ binary-arch: build install
 	dh_testdir
 	dh_testroot
 	dh_installman -plibav-tools debian/qt-faststart.1
-	dh_strip -a --dbg-package=libav-dbg
+#	dh_strip -a --dbg-package=libav-dbg
 	dh_lintian -a
 	dh_link -a
 	dh_compress -a

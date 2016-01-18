@@ -31,6 +31,10 @@
 #include "huffman.h"
 #include "put_bits.h"
 
+#ifdef __ARM_NEON__
+#include <arm_neon.h>
+#endif
+
 static inline int sub_left_prediction(HYuvContext *s, uint8_t *dst,
                                       uint8_t *src, int w, int left)
 {
@@ -217,6 +221,10 @@ static av_cold int encode_init(AVCodecContext *avctx)
         s->avctx->extradata_size +=
             store_table(s, s->len[i], &((uint8_t*)s->avctx->extradata)[s->avctx->extradata_size]);
     }
+    for (i = 0; i < 256; i++) {
+        s->fast_bits[i] = s->bits[0][i];
+    }
+
 
     if (s->context) {
         for (i = 0; i < 3; i++) {
@@ -240,7 +248,7 @@ static av_cold int encode_init(AVCodecContext *avctx)
 }
 static int encode_422_bitstream(HYuvContext *s, int offset, int count)
 {
-    int i;
+    int i = 0;
     const uint8_t *y = s->temp[0] + offset;
     const uint8_t *u = s->temp[1] + offset / 2;
     const uint8_t *v = s->temp[2] + offset / 2;
@@ -251,10 +259,10 @@ static int encode_422_bitstream(HYuvContext *s, int offset, int count)
     }
 
 #define LOAD4\
-            int y0 = y[2 * i];\
-            int y1 = y[2 * i + 1];\
-            int u0 = u[i];\
-            int v0 = v[i];
+            const int y0 = y[2 * i];\
+            const int y1 = y[2 * i + 1];\
+            const int u0 = u[i];\
+            const int v0 = v[i];
 
     count /= 2;
 
@@ -282,12 +290,52 @@ static int encode_422_bitstream(HYuvContext *s, int offset, int count)
             put_bits(&s->pb, s->len[2][v0], s->bits[2][v0]);
         }
     } else {
+/* For now disabled. possibly slower due to unaligned accesses? */
+#ifdef DISABLE__ARM_NEON__
+        uint8_t packed_vect[256] __attribute__((aligned (16))) = {};
+        struct pixels_t {
+            uint8_t y0;
+            uint8_t u;
+            uint8_t y1;
+            uint8_t v;
+        } *pixels = packed_vect;
+        int j = 0, k = 0;
+
+        /* Attempt to use NEON instructions to convert from planar to
+           interleaved. Hopefully better on cache and less waiting on
+           memory reads? Table lookup would be nice in SIMD too, but not now */
+        for(j = 0; j < count / 8; j++) {
+            const uint8_t *vu = u+i, *vv = v+i, *vy = y + i*2;
+            /* Referenced I422 to YUYV from VLC's arm implementation */
+	    __asm__ volatile (
+                "1:                                              \n"
+                "vld1.u8          {d2},   [%[vu]]                \n"
+                "vld1.u8          {d3},	  [%[vv]]                \n"
+                "vzip.u8            d2,      d3                  \n"
+                "vld1.u8          {q0},   [%[vy]]                \n"
+                "vzip.u8            q0,      q1                  \n"
+                "vst1.u8       {q0-q1},   [%[packed_vect],:128]  \n"
+                : [packed_vect] "+r" (pixels)
+                : [vu] "r" (vu), [vv] "r" (vv), [vy] "r" (vy)
+                : "memory", "q0", "q1", "d2", "d3"
+                );
+            for(k = 0; k < 8; k++) {
+                put_bits(&s->pb, s->len[0][pixels[k].y0], s->fast_bits[pixels[k].y0]);
+                put_bits(&s->pb, s->len[0][pixels[k].u],  s->fast_bits[pixels[k].u]);
+                put_bits(&s->pb, s->len[0][pixels[k].y1], s->fast_bits[pixels[k].y1]);
+                put_bits(&s->pb, s->len[0][pixels[k].v],  s->fast_bits[pixels[k].v]);
+            }
+            i += 8;
+        }
+        for(; i < count; i++) {
+#else
         for(i = 0; i < count; i++) {
+#endif
             LOAD4;
-            put_bits(&s->pb, s->len[0][y0], s->bits[0][y0]);
-            put_bits(&s->pb, s->len[1][u0], s->bits[1][u0]);
-            put_bits(&s->pb, s->len[0][y1], s->bits[0][y1]);
-            put_bits(&s->pb, s->len[2][v0], s->bits[2][v0]);
+            put_bits(&s->pb, s->len[0][y0], s->fast_bits[y0]);
+            put_bits(&s->pb, s->len[0][u0], s->fast_bits[u0]);
+            put_bits(&s->pb, s->len[0][y1], s->fast_bits[y1]);
+            put_bits(&s->pb, s->len[0][v0], s->fast_bits[v0]);
         }
     }
     return 0;

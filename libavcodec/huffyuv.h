@@ -75,6 +75,7 @@ typedef struct HYuvContext {
     uint8_t *temp[3];
     uint64_t stats[3][256];
     uint8_t len[3][256];
+    uint8_t fast_bits[256];
     uint32_t bits[3][256];
     uint32_t pix_bgr_map[1<<VLC_BITS];
     VLC vlc[6];                             //Y,U,V,YY,YU,YV
